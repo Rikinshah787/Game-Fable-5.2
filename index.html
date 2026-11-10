@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>FOG CITY</title>
+<meta name="description" content="FOG CITY — an open-world San Francisco crime game that runs in your browser.">
+<meta property="og:title" content="FOG CITY">
+<meta property="og:description" content="An open-world San Francisco crime game that runs in your browser.">
+<meta property="og:image" content="assets/gen/keyart.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  :root {
+    --ink: #ffffff; --dim: rgba(255,255,255,.62); --pink: #ff4fa3; --teal: #35e0d0; --gold: #ffd166; --red: #ff4055; --green: #6ee787;
+    --display: "Avenir Next Condensed", "Helvetica Neue", "Arial Narrow", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  body { font-family: var(--display); color: var(--ink); -webkit-font-smoothing: antialiased; user-select: none; -webkit-user-select: none; }
+  canvas#gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  .layer { position: fixed; inset: 0; pointer-events: none; }
+  .hidden { opacity: 0 !important; visibility: hidden; }
+  .shadow { text-shadow: 0 2px 0 rgba(0,0,0,.55), 0 0 14px rgba(0,0,0,.55); }
+
+  /* ---- HUD ---- */
+  #hud { transition: opacity .5s; }
+  #mapWrap { position: absolute; left: 28px; bottom: 28px; width: 232px; }
+  #map { width: 232px; height: 164px; display: block; border-radius: 8px; background: rgba(8,12,16,.72); box-shadow: 0 0 0 2px rgba(0,0,0,.6), 0 10px 30px rgba(0,0,0,.45); }
+  .bars { display: flex; gap: 5px; margin-top: 6px; }
+  .bar { flex: 1; height: 7px; background: rgba(0,0,0,.6); border-radius: 2px; overflow: hidden; }
+  .bar i { display: block; height: 100%; transform-origin: left; background: var(--green); transition: transform .15s; }
+  .bar.armor i { background: #58b7ff; }
+
+  #tr { position: absolute; top: 24px; right: 30px; text-align: right; }
+  #stars { font-size: 30px; letter-spacing: 5px; line-height: 1; height: 32px; }
+  #stars span { color: rgba(255,255,255,.2); text-shadow: 0 2px 0 rgba(0,0,0,.6); }
+  #stars span.on { color: #fff; text-shadow: 0 0 14px rgba(255,255,255,.9), 0 2px 0 rgba(0,0,0,.6); }
+  #stars.flash span.on { animation: flash .5s steps(2) infinite; }
+  @keyframes flash { 50% { color: rgba(255,255,255,.25); text-shadow: none; } }
+  #cash { font: 700 34px/1.1 var(--display); color: var(--green); letter-spacing: .02em; margin-top: 6px; }
+  #weapon { font: 600 17px/1.2 var(--display); letter-spacing: .14em; color: var(--dim); margin-top: 4px; text-transform: uppercase; }
+  #weapon b { color: #fff; font-family: var(--mono); font-weight: 600; margin-left: 8px; }
+
+  #br { position: absolute; right: 30px; bottom: 28px; text-align: right; transition: opacity .3s; }
+  #speed { font: 700 78px/0.86 var(--display); letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+  #speedU { font: 600 15px var(--display); letter-spacing: .3em; color: var(--dim); margin-right: -.3em; }
+  #carName { font: 600 15px var(--display); letter-spacing: .22em; color: var(--dim); text-transform: uppercase; margin-bottom: 8px; }
+
+  #zone { position: absolute; right: 30px; bottom: 150px; text-align: right; opacity: 0; transition: opacity .8s; }
+  #zone.show { opacity: 1; }
+  #zone .n { font: italic 700 44px/1 var(--display); letter-spacing: .01em; }
+  #zone .s { font: 600 14px var(--display); letter-spacing: .34em; color: var(--gold); text-transform: uppercase; margin-top: 4px; }
+
+  #prompt { position: absolute; left: 50%; bottom: 14%; transform: translateX(-50%); font: 600 17px var(--display); letter-spacing: .1em; background: rgba(0,0,0,.6); padding: 9px 16px; border-radius: 6px; opacity: 0; transition: opacity .2s; white-space: nowrap; }
+  #prompt.show { opacity: 1; }
+  #prompt kbd { font: 700 14px var(--mono); background: #fff; color: #000; padding: 2px 7px; border-radius: 4px; margin-right: 8px; }
+  #mission { position: absolute; left: 50%; top: 26px; transform: translateX(-50%); text-align: center; font: 600 18px var(--display); letter-spacing: .06em; background: rgba(0,0,0,.55); padding: 10px 18px; border-radius: 6px; max-width: 60vw; opacity: 0; transition: opacity .4s; }
+  #mission.show { opacity: 1; }
+  #mission b { color: var(--gold); }
+  #cross { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1.5px rgba(0,0,0,.6); opacity: 0; }
+  #cross.show { opacity: .9; }
+  #cross.hit { background: var(--red); transform: scale(1.8); }
+
+  #big { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0); transition: background 1.2s, opacity .6s; opacity: 0; }
+  #big.show { opacity: 1; background: rgba(0,0,0,.55); }
+  #big h2 { margin: 0; font: italic 800 clamp(60px, 11vw, 170px)/0.9 var(--display); letter-spacing: .01em; color: var(--red); text-shadow: 0 6px 0 rgba(0,0,0,.6); }
+  #big p { font: 600 18px var(--display); letter-spacing: .34em; color: var(--dim); text-transform: uppercase; }
+  #dmg { box-shadow: inset 0 0 180px 40px rgba(255,20,40,.75); opacity: 0; }
+
+  /* ---- title / loading ---- */
+  #title { display: flex; flex-direction: column; justify-content: flex-end; padding: 0 6vw 8vh; pointer-events: auto; transition: opacity 1s, visibility 1s;
+    background: linear-gradient(to top, rgba(0,0,0,.72), rgba(0,0,0,0) 46%), linear-gradient(to bottom, rgba(0,0,0,.35), rgba(0,0,0,0) 30%); }
+  #title h1 { margin: 0; font: italic 800 clamp(64px, 12.5vw, 210px)/0.84 var(--display); letter-spacing: -.01em;
+    background: linear-gradient(100deg, #fff 8%, #ffd0e6 34%, var(--pink) 56%, #ff9a3c 84%); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 6px 0 rgba(0,0,0,.45)) drop-shadow(0 0 40px rgba(255,79,163,.35)); padding-right: .12em; }
+  #title .tag { font: 600 clamp(12px, 1.35vw, 19px) var(--display); letter-spacing: .5em; text-transform: uppercase; color: #fff; margin: 14px 0 34px 6px; }
+  #row { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; margin-left: 6px; }
+  #play { font: 700 20px var(--display); letter-spacing: .26em; text-transform: uppercase; color: #000; background: #fff; border: 0; padding: 17px 44px 17px 50px; border-radius: 4px; cursor: pointer; }
+  #play:hover { background: var(--pink); color: #fff; }
+  #play[disabled] { background: rgba(255,255,255,.25); color: rgba(255,255,255,.8); cursor: default; }
+  .keys { display: flex; gap: 22px; flex-wrap: wrap; font: 600 13px var(--display); letter-spacing: .16em; color: var(--dim); text-transform: uppercase; }
+  .keys b { color: #fff; margin-right: 7px; }
+  #loadbar { position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; transform-origin: left; transform: scaleX(0); background: linear-gradient(90deg, var(--pink), #ff9a3c); transition: transform .2s; }
+  #fade { background: #000; transition: opacity 1.4s; }
+  #paused { display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.55); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); font: italic 800 80px var(--display); }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/jsm/" } }
+</script>
+</head>
+<body>
+<canvas id="gl"></canvas>
+
+<div id="hud" class="layer hidden">
+  <div id="mapWrap">
+    <canvas id="map" width="464" height="328"></canvas>
+    <div class="bars"><div class="bar"><i id="hp"></i></div><div class="bar armor"><i id="armor"></i></div></div>
+  </div>
+  <div id="tr" class="shadow">
+    <div id="stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+    <div id="cash">$0</div>
+    <div id="weapon">Unarmed</div>
+  </div>
+  <div id="zone" class="shadow"><div class="n" id="zoneN"></div><div class="s" id="zoneS"></div></div>
+  <div id="br" class="shadow">
+    <div id="carName"></div>
+    <div id="speed">0</div>
+    <div id="speedU">MPH</div>
+  </div>
+  <div id="mission" class="shadow"></div>
+  <div id="prompt"></div>
+  <div id="cross"></div>
+</div>
+<div id="dmg" class="layer"></div>
+<div id="big" class="layer"><h2 id="bigH"></h2><p id="bigP"></p></div>
+
+<div id="title" class="layer">
+  <h1>FOG CITY</h1>
+  <div class="tag">San Francisco · everything here is for the taking</div>
+  <div id="row">
+    <button id="play" disabled>Loading</button>
+    <div class="keys">
+      <span><b>WASD</b>Move / drive</span><span><b>Mouse</b>Look</span><span><b>F</b>Enter / exit car</span>
+      <span><b>Click</b>Shoot</span><span><b>Space</b>Handbrake / jump</span><span><b>Shift</b>Sprint</span><span><b>Esc</b>Pause</span>
+    </div>
+  </div>
+  <div id="loadbar"></div>
+</div>
+<div id="paused" class="layer hidden">PAUSED</div>
+<div id="fade" class="layer"></div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

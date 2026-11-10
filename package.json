@@ -1,0 +1,16 @@
+{
+  "name": "fog-city",
+  "version": "1.0.0",
+  "description": "FOG CITY: an open-world San Francisco crime game in the browser",
+  "main": "index.js",
+  "scripts": {
+    "start": "python3 -m http.server 8765"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "three": "^0.187.0"
+  }
+}
