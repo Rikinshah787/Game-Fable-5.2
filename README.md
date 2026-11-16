@@ -1,66 +1,80 @@
-# FOG CITY
+# CONCRETE ECHO
 
-An open-world crime game set in a compact, San Francisco-inspired city. It runs in the browser with Three.js and has no build step.
+A body-camera style shooter that runs in the browser. You clear a two-storey derelict building of 11 armed hostiles, seen through a chest-mounted camera: fisheye lens, hard contrast, sensor grain, compressed-video colour and handheld shake.
+
+![Concrete Echo gameplay: a hostile in olive field kit in front of a graffiti wall, seen through the body camera](docs/screenshot.png)
+
+## Features
+
+- **Body camera look.** Barrel distortion, in-camera sharpening, 4:2:0 colour smear, crushed shadows, clipped highlights, auto exposure, motion blur and a recording overlay.
+- **Real physics.** Crates, drums, chairs and the rest of the 65 photo-scanned props are Rapier rigid bodies. Bullets push them, go through soft cover and stop on concrete and steel. Hostiles fall as ragdolls that keep reacting to hits.
+- **Detailed reloads.** The magazine is released and slides out of the well. An empty one falls, clatters and stays on the floor; a partly used one goes back to the pouch. A gloved hand seats the new magazine with a slap, and the bolt is racked after an empty reload.
+- **Four weapons.** Rifle, pistol, pump shotgun loaded one shell at a time, and the Thumper, a launcher whose concussion charge throws bodies and furniture across the room.
+- **Echo pulse.** Pings the building and shows hostiles through the walls for a few seconds, but tells the nearer ones where you are.
 
 ## Run it
 
-```
+Requires Node.js. There is no install step and there are no dependencies.
+
+```bash
 npm start
 ```
 
-Then open http://localhost:8765. Any static file server works; the game cannot run from a `file://` URL because it loads ES modules.
-
-Add `?sky=sunset` to the URL for a golden-hour sky.
+Open <http://localhost:5173> and press **DEPLOY**. Use `PORT=8080 npm start` to choose another port. Play in a desktop browser with WebGL 2 and a mouse; it has been tested in Chromium.
 
 ## Controls
 
-| Key | On foot | In a car |
-| --- | --- | --- |
-| W A S D | Move | Accelerate, steer, brake / reverse |
-| Mouse | Look | Orbit the camera |
-| Shift | Sprint | |
-| Space | Jump | Handbrake |
-| F | Get in the nearest car | Get out |
-| Left click | Shoot | |
-| Right click | Aim | |
-| 1 / 2 / Q / wheel | Switch weapon | |
-| R | Reload | |
-| H | | Horn |
-| M | Mute | Mute |
-| Esc | Pause | Pause |
-
-## What is in it
-
-- A 7 x 7 block city on hills, with a financial district, painted row houses, a waterfront boulevard, piers and parks.
-- A drivable suspension bridge to a headland, a prison rock in the bay, a hilltop lookout tower and a pyramid tower downtown.
-- Traffic that follows lanes and obeys signals, pedestrians who flee from gunfire, and parked cars you can take.
-- A five-star wanted system: police cars chase you, officers get out and shoot, and the stars clear once you stay out of sight.
-- Courier jobs for cash, cars that catch fire and explode, a rotating minimap, and fully synthesised sound.
-- Photographic building fronts on the row houses and low-rise blocks, rooftop billboards for invented local brands, a cable car on the hill line and a city bus.
-
-## Layout
-
-| File | Purpose |
+| Input | Action |
 | --- | --- |
-| `src/main.js` | Boot, input, player, camera, HUD, main loop |
-| `src/city.js` | Terrain, streets, buildings, facade shader, collision queries |
-| `src/landmarks.js` | Bridge, headland, piers, island, towers |
-| `src/props.js` | Palms, street lamps, traffic signals, parks, parking |
-| `src/vehicle.js` | Car model set-up and driving physics |
-| `src/chars.js` | Animated characters and animation retargeting |
-| `src/sim.js` | Traffic, pedestrians, police, wanted level, jobs |
-| `src/transit.js` | Cable car and bus on fixed routes |
-| `src/guns.js` | Pistol and SMG models |
-| `src/decals.js` | Bullet holes and tyre marks |
-| `src/screens.js` | LED advert screens downtown (plays `assets/gen/ad<N>.mp4` when listed in `VIDEO_ADS`) |
-| `src/fx.js`, `src/audio.js`, `src/post.js` | Particles, sound synthesis, post-processing |
+| W A S D | Move |
+| Mouse | Aim (the camera trails the weapon, as a body camera would) |
+| Left click | Fire |
+| Right click (hold) | Aim down the sights |
+| 1 / 2 / 3 / 4, mouse wheel | Rifle / pistol / shotgun / Thumper |
+| R | Reload |
+| V | Echo pulse (14 second recharge) |
+| Shift / C / Space | Sprint / crouch / jump |
+| Q / E | Lean left / right |
+| F | Weapon light |
+| L | Laser on or off (the green dot is the only crosshair) |
+| P | Performance mode |
+| Esc | Pause |
+| Enter | Redeploy after a run ends |
 
-## Third-party assets
+## How it plays
 
-- Building-front photos, billboards, tram and bus textures and the key art in `assets/gen/`: generated for this project with [Higgsfield](https://higgsfield.ai) (GPT Image 2.6). The shop names and brands on them are invented.
-- Sky HDRIs and surface textures: [Poly Haven](https://polyhaven.com), CC0.
-- Car model (`assets/ferrari.glb`), character models (`Soldier.glb`, `Michelle.glb`, `rpm.glb`) and `waternormals.jpg`: from the [three.js examples](https://github.com/mrdoob/three.js/tree/dev/examples/models/gltf). Check each model's licence there before publishing or selling the game. The car is a real manufacturer's design; replace it before any commercial release.
-- [three.js](https://threejs.org), MIT.
+- There is no crosshair and almost no HUD.
+- Hostiles see in a cone, hear gunfire and come looking for you.
+- One shot to the head or two to the torso drops a hostile.
+- Health comes back after five seconds without being hit.
+- Bullets go through crates, cartons and chairs, losing damage each time. Walls, drums and concrete stop them.
 
-The city, its characters and its name are original. This project is not affiliated with any commercial game.
-# Game-Fable-5.2
+## Project layout
+
+| Path | Contents |
+| --- | --- |
+| `index.html` | Page, menu and camera overlay |
+| `src/main.js` | Boot, input, game loop |
+| `src/level.js` | Building, collision, lighting, navigation |
+| `src/player.js` | Movement, camera, weapon handling, recoil, reloads |
+| `src/weapons.js` | Weapon stats and models |
+| `src/enemy.js` | Hostile AI, animation, ragdolls |
+| `src/soldier.js` | Drives the soldier model from the ragdoll skeleton |
+| `src/props.js` | Rigid-body props, bullet impulses, blasts |
+| `src/fx.js` | Particles, decals, tracers, casings, dropped magazines |
+| `src/post.js` | Post-processing and the body camera look |
+| `src/audio.js` | Synthesized gunshots, impacts and room tone |
+| `assets/` | Scanned textures, prop models, soldier model |
+| `vendor/` | three.js r160 and Rapier 0.14 |
+
+## Testing hooks
+
+URL flags for checking the game without playing it: `?auto` starts immediately, `?noai` stops hostiles noticing you, `?q=low` starts in performance mode, and `?pos=x,y,z,yaw,pitch` moves the start point. The running game is available as `window.__game` in the console.
+
+## Credits
+
+- Textures and prop models: [Poly Haven](https://polyhaven.com), CC0.
+- Soldier model: `Soldier.glb` from the [three.js examples](https://github.com/mrdoob/three.js/tree/r160/examples/models/gltf), a Mixamo character. Read Adobe's Mixamo terms before selling a build that includes it.
+- [three.js](https://threejs.org) r160 (MIT) and [Rapier](https://rapier.rs) 0.14 (Apache 2.0).
+
+The level, weapons, sounds and code are original to this project.

@@ -1,16 +1,9 @@
 {
-  "name": "fog-city",
+  "name": "concrete-echo",
   "version": "1.0.0",
-  "description": "FOG CITY: an open-world San Francisco crime game in the browser",
-  "main": "index.js",
+  "private": true,
+  "description": "An original body-camera style building-clearance shooter for the browser.",
   "scripts": {
-    "start": "python3 -m http.server 8765"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "three": "^0.187.0"
+    "start": "node server.js"
   }
 }
